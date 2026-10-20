@@ -241,25 +241,22 @@
         loading.style.transition = 'opacity 0.3s ease';
         setTimeout(function () {
           try {
-            loading.style.display = 'none';
-            app.style.display = 'flex';
-            app.style.opacity = '0';
-            app.style.transition = 'opacity 0.3s ease';
-            setTimeout(function () { app.style.opacity = '1'; }, 10);
+            loading.classList.add('is-hidden');
+            app.classList.add('is-ready');
 
             ITG.UI.showScreen('dashboard');
             ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
             console.log('[ITG Boot] App revealed successfully');
           } catch (err) {
             console.error('[ITG] Error revealing app:', err);
-            loading.style.display = 'none';
-            app.style.display = 'flex';
+            loading.classList.add('is-hidden');
+            app.classList.add('is-ready');
           }
         }, 300);
       } catch (err) {
         console.error('[ITG] Error hiding loading screen:', err);
-        loading.style.display = 'none';
-        app.style.display = 'flex';
+        loading.classList.add('is-hidden');
+        app.classList.add('is-ready');
       }
     }, 100);
 

@@ -89,6 +89,16 @@ html, body {
   visibility: hidden;
 }
 
+#loading-screen.is-hidden {
+  display: none !important;
+}
+
+#app.is-ready {
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 .loader-content {
   display: flex;
   flex-direction: column;
