@@ -23,9 +23,35 @@
     }
   });
 
+  // ── Fallback: if 'load' hasn't fired in 15 seconds, show an error ────────
+  setTimeout(function () {
+    if (document.getElementById('loading-screen') && document.getElementById('loading-screen').style.display !== 'none') {
+      if (typeof THREE === 'undefined') {
+        document.getElementById('loading-screen').innerHTML =
+          `<div style="color:#ff4455;font-family:monospace;padding:40px;text-align:center">
+            <div style="font-size:48px">⚠️</div>
+            <div style="font-size:20px;margin:16px 0">Loading Timeout</div>
+            <div style="font-size:14px;color:#888">3D engine (Three.js) failed to load after 15 seconds.</div>
+            <div style="font-size:12px;color:#555;margin-top:8px">Check your internet connection and refresh.</div>
+          </div>`;
+      }
+    }
+  }, 15000);
+
   function boot() {
     const loading = document.getElementById('loading-screen');
     const app = document.getElementById('app');
+
+    // ── Verify Three.js loaded (critical dependency) ──────────────────────
+    if (typeof THREE === 'undefined') {
+      loading.innerHTML =
+        `<div style="color:#ff4455;font-family:monospace;padding:40px;text-align:center">
+          <div style="font-size:48px">⚠️</div>
+          <div style="font-size:20px;margin:16px 0">3D Engine Failed</div>
+          <div style="font-size:14px;color:#888">Three.js could not be loaded. Check your connection.</div>
+        </div>`;
+      return;
+    }
 
     setLoadingStatus('Initializing event system...');
     assertExists('ITG.EventBus', window.ITG && window.ITG.EventBus);
@@ -202,18 +228,18 @@
     // ── Show app ───────────────────────────────────────────────────────────
     setTimeout(function () {
       loading.style.opacity = '0';
-      loading.style.transition = 'opacity 0.5s ease';
+      loading.style.transition = 'opacity 0.3s ease';
       setTimeout(function () {
         loading.style.display = 'none';
         app.style.display = 'flex';
         app.style.opacity = '0';
-        app.style.transition = 'opacity 0.5s ease';
+        app.style.transition = 'opacity 0.3s ease';
         setTimeout(function () { app.style.opacity = '1'; }, 10);
 
         ITG.UI.showScreen('dashboard');
         ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
-      }, 500);
-    }, 800);
+      }, 300);
+    }, 100);
 
     // ── Auto-advance loop (for 2x/3x speed) ───────────────────────────────
     startAutoAdvance();
