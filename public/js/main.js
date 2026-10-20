@@ -8,20 +8,29 @@
 
   // ─── BOOT SEQUENCE ────────────────────────────────────────────────────────
 
-  window.addEventListener('load', function () {
+  function startBoot() {
     try {
       boot();
     } catch (err) {
       console.error('[ITG] Fatal boot error:', err);
-      document.getElementById('loading-screen').innerHTML =
-        `<div style="color:#ff4455;font-family:monospace;padding:40px;text-align:center">
+      const ls = document.getElementById('loading-screen');
+      if (ls) {
+        ls.innerHTML =
+          `<div style="color:#ff4455;font-family:monospace;padding:40px;text-align:center">
           <div style="font-size:48px">⚠️</div>
           <div style="font-size:20px;margin:16px 0">Boot Failed</div>
           <div style="font-size:14px;color:#888">${err.message}</div>
           <div style="font-size:12px;color:#555;margin-top:8px">Check browser console for details</div>
         </div>`;
+      }
     }
-  });
+  }
+
+  if (document.readyState === 'complete') {
+    startBoot();
+  } else {
+    window.addEventListener('load', startBoot);
+  }
 
   // ── Fallback: if 'load' hasn't fired in 15 seconds, show an error ────────
   setTimeout(function () {
@@ -227,18 +236,31 @@
 
     // ── Show app ───────────────────────────────────────────────────────────
     setTimeout(function () {
-      loading.style.opacity = '0';
-      loading.style.transition = 'opacity 0.3s ease';
-      setTimeout(function () {
+      try {
+        loading.style.opacity = '0';
+        loading.style.transition = 'opacity 0.3s ease';
+        setTimeout(function () {
+          try {
+            loading.style.display = 'none';
+            app.style.display = 'flex';
+            app.style.opacity = '0';
+            app.style.transition = 'opacity 0.3s ease';
+            setTimeout(function () { app.style.opacity = '1'; }, 10);
+
+            ITG.UI.showScreen('dashboard');
+            ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
+            console.log('[ITG Boot] App revealed successfully');
+          } catch (err) {
+            console.error('[ITG] Error revealing app:', err);
+            loading.style.display = 'none';
+            app.style.display = 'flex';
+          }
+        }, 300);
+      } catch (err) {
+        console.error('[ITG] Error hiding loading screen:', err);
         loading.style.display = 'none';
         app.style.display = 'flex';
-        app.style.opacity = '0';
-        app.style.transition = 'opacity 0.3s ease';
-        setTimeout(function () { app.style.opacity = '1'; }, 10);
-
-        ITG.UI.showScreen('dashboard');
-        ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
-      }, 300);
+      }
     }, 100);
 
     // ── Auto-advance loop (for 2x/3x speed) ───────────────────────────────
