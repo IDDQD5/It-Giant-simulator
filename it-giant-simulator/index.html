@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IT Giant Simulator</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <!-- Game Stylesheet -->
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════
+       LOADING SCREEN
+  ═══════════════════════════════════════════ -->
+  <div id="loading-screen">
+    <div class="loader-content">
+      <div class="loader-logo-ring">
+        <div class="loader-core"></div>
+      </div>
+      <div class="loader-title">IT GIANT</div>
+      <div class="loader-subtitle">Business Simulator</div>
+      <div class="loader-bar-bg">
+        <div class="loader-bar-fill"></div>
+      </div>
+      <div class="loader-status loading-status">Initializing systems...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       MAIN APP (hidden until boot)
+  ═══════════════════════════════════════════ -->
+  <div id="app" style="display:none;">
+
+    <!-- ── HUD Top Bar ─────────────────────────── -->
+    <div id="hud">
+      <!-- Left: company name -->
+      <div class="hud-left">
+        <span class="hud-logo-icon">⚡</span>
+        <span id="hud-company">NovaTech</span>
+      </div>
+
+      <!-- Center: time / money / rep -->
+      <div class="hud-center">
+        <div class="hud-stat-badge">
+          <span class="hud-stat-label">WEEK</span>
+          <span id="hud-time" style="color:var(--text-primary);">Year 1, Week 1</span>
+        </div>
+        <div class="hud-stat-badge">
+          <span class="hud-stat-label">CASH</span>
+          <span id="hud-money" style="color:var(--green);">$2.00M</span>
+        </div>
+        <div class="hud-stat-badge">
+          <span class="hud-stat-label">REP</span>
+          <span id="hud-rep" style="color:var(--yellow);">⭐ 30</span>
+        </div>
+      </div>
+
+      <!-- Right: controls -->
+      <div id="hud-controls">
+        <button id="btn-pause" class="hud-btn" title="Pause / Resume">⏸</button>
+        <button id="btn-speed" class="hud-btn" title="Game Speed">1x</button>
+        <button id="btn-advance" class="hud-btn hud-btn-primary">Next Week ▶</button>
+      </div>
+    </div>
+
+    <!-- ── Sidebar ─────────────────────────────── -->
+    <nav id="sidebar">
+      <div class="sidebar-header">
+        <div class="sidebar-title">Navigation</div>
+      </div>
+      <div class="nav-list">
+        <div class="nav-item active" data-screen="dashboard">
+          <span class="nav-icon">🏠</span>Dashboard
+        </div>
+        <div class="nav-item" data-screen="products">
+          <span class="nav-icon">📦</span>Products
+        </div>
+        <div class="nav-item" data-screen="rnd">
+          <span class="nav-icon">🔬</span>R&amp;D
+        </div>
+        <div class="nav-item" data-screen="hr">
+          <span class="nav-icon">👥</span>HR
+        </div>
+        <div class="nav-item" data-screen="market">
+          <span class="nav-icon">📈</span>Market
+        </div>
+        <div class="nav-item" data-screen="finance">
+          <span class="nav-icon">💰</span>Finance
+        </div>
+      </div>
+      <div class="sidebar-footer">
+        <div class="version-tag">v0.1.0-alpha</div>
+      </div>
+    </nav>
+
+    <!-- ── Screen Sections ────────────────────── -->
+    <main id="content">
+      <section id="screen-dashboard" class="screen active"></section>
+      <section id="screen-products"  class="screen"></section>
+      <section id="screen-rnd"       class="screen"></section>
+      <section id="screen-market"    class="screen"></section>
+      <section id="screen-finance"   class="screen"></section>
+      <section id="screen-hr"        class="screen"></section>
+    </main>
+
+  </div><!-- /app -->
+
+  <!-- ═══════════════════════════════════════════
+       3D EDITOR MODAL (fullscreen overlay)
+       editor.js will inject its own HTML into
+       #editor-modal and toggle class .active
+  ═══════════════════════════════════════════ -->
+  <div id="editor-modal">
+    <!-- Sub-elements injected by editor.js -->
+    <!-- Kept as lightweight placeholders so DOM queries don't fail -->
+    <div id="editor-toolbar" style="display:none;">
+      <span id="editor-title">⚙️ Device Constructor</span>
+      <div id="editor-toolbar-btns">
+        <button id="editor-launch-btn">🚀 Save Design</button>
+        <button id="editor-close-btn">✕ Close</button>
+      </div>
+    </div>
+    <div id="editor-body" style="display:none;">
+      <div id="editor-comp-list"></div>
+      <canvas id="editor-canvas"></canvas>
+      <div id="editor-right-panel">
+        <div id="editor-info-panel"></div>
+        <div id="editor-material-panel"></div>
+        <div id="editor-scores"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════
+       TOAST NOTIFICATIONS
+  ═══════════════════════════════════════════ -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════════════════════════════════════
+       SCRIPTS — order is critical!
+  ═══════════════════════════════════════════ -->
+  <!-- Three.js UMD -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <!-- OrbitControls non-module (attaches to THREE global) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+  <!-- Game modules -->
+  <script src="js/data.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/editor.js"></script>
+  <script src="js/main.js"></script>
+
+</body>
+</html>
