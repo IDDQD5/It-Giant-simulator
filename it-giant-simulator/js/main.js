@@ -34,6 +34,15 @@
     assertExists('ITG.Data', window.ITG && window.ITG.Data);
     assertExists('ITG.Data.components', ITG.Data.components && ITG.Data.components.length > 0);
 
+    setLoadingStatus('Initializing localization...');
+    if (window.ITG.I18n) ITG.I18n.init();
+
+    setLoadingStatus('Initializing sound engine...');
+    if (window.ITG.Sound) ITG.Sound.init();
+
+    setLoadingStatus('Initializing achievements...');
+    if (window.ITG.Achievements) ITG.Achievements.init();
+
     setLoadingStatus('Starting game engine...');
     assertExists('ITG.GameState', window.ITG && window.ITG.GameState);
     assertExists('ITG.Calculator', window.ITG && window.ITG.Calculator);
@@ -95,6 +104,43 @@
       });
     }
 
+    // Settings button
+    const btnSettings = document.getElementById('btn-settings');
+    if (btnSettings) {
+      btnSettings.addEventListener('click', function () {
+        if (ITG.Sound) ITG.Sound.ensureContext();
+        if (ITG.UI && ITG.UI.openSettingsModal) ITG.UI.openSettingsModal();
+      });
+    }
+
+    // Settings modal close
+    const settingsCloseBtn = document.getElementById('settings-close-btn');
+    if (settingsCloseBtn) {
+      settingsCloseBtn.addEventListener('click', function () {
+        document.getElementById('settings-modal').style.display = 'none';
+      });
+    }
+
+    // Game state overlay buttons
+    const btnGameContinue = document.getElementById('btn-game-continue');
+    if (btnGameContinue) {
+      btnGameContinue.addEventListener('click', function () {
+        document.getElementById('game-state-overlay').style.display = 'none';
+        ITG.GameState.meta.gameEnded = false;
+      });
+    }
+    const btnGameNew = document.getElementById('btn-game-new');
+    if (btnGameNew) {
+      btnGameNew.addEventListener('click', function () {
+        document.getElementById('game-state-overlay').style.display = 'none';
+        if (ITG.GameState.newGame) ITG.GameState.newGame();
+        if (ITG.Achievements) ITG.Achievements.reset();
+        updateHUD();
+        ITG.UI.refreshAll();
+        ITG.UI.showScreen('dashboard');
+      });
+    }
+
     // EventBus listeners
     ITG.EventBus.on('editor:open', function (opts) {
       ITG.Editor.open(opts);
@@ -117,9 +163,28 @@
       ITG.UI.showToast(data.message, data.type || 'info');
     });
 
+    ITG.EventBus.on('game:victory', function () {
+      if (window.ITG.Sound) ITG.Sound.play('victory');
+      if (ITG.UI && ITG.UI.showGameStateOverlay) ITG.UI.showGameStateOverlay('victory');
+    });
+
+    ITG.EventBus.on('game:defeat', function () {
+      if (window.ITG.Sound) ITG.Sound.play('defeat');
+      if (ITG.UI && ITG.UI.showGameStateOverlay) ITG.UI.showGameStateOverlay('defeat');
+    });
+
     ITG.EventBus.on('screen:change', function (data) {
       ITG.UI.showScreen(data.screen);
     });
+
+    // Start music on first user interaction (browser autoplay policy)
+    function startMusicOnce() {
+      if (window.ITG.Sound) { ITG.Sound.ensureContext(); ITG.Sound.startMusic(); }
+      document.removeEventListener('click', startMusicOnce);
+      document.removeEventListener('keydown', startMusicOnce);
+    }
+    document.addEventListener('click', startMusicOnce);
+    document.addEventListener('keydown', startMusicOnce);
 
     // ── Try to load saved game ─────────────────────────────────────────────
     setLoadingStatus('Loading saved game...');
@@ -146,7 +211,7 @@
         setTimeout(function () { app.style.opacity = '1'; }, 10);
 
         ITG.UI.showScreen('dashboard');
-        ITG.UI.showToast('🚀 Welcome to IT Giant Simulator! Start by designing your first PC in Products.', 'info');
+        ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
       }, 500);
     }, 800);
 

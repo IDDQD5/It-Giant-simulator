@@ -457,7 +457,7 @@ ITG.GameState = (function () {
   const _SAVE_KEY = 'itg_save_v1';
 
   const state = {
-    meta: { week: 1, year: 1, paused: false, speed: 1 },
+    meta: { week: 1, year: 1, paused: false, speed: 1, gameOver: false, victory: false, gameEnded: false },
     company: {
       name: 'NovaTech',
       money: 2000000,
@@ -481,6 +481,7 @@ ITG.GameState = (function () {
       _costMultiplierWeeks: 0,
       _demandMultiplier: 1.0,
       _demandMultiplierWeeks: 0,
+      _negativeEventsSurvived: 0,
     },
     finance: {
       weeklyIncome: 0,
@@ -488,8 +489,86 @@ ITG.GameState = (function () {
       history: [],
       totalRevenue: 0,
       totalExpenses: 0,
+      _bankruptWeeks: 0,
+      _profitStreak: 0,
+      _maxProfitStreak: 0,
     },
   };
+
+  function newGame() {
+    Object.assign(state.meta, { week: 1, year: 1, paused: false, speed: 1, gameOver: false, victory: false, gameEnded: false });
+    state.company.name = 'NovaTech';
+    state.company.money = 2000000;
+    state.company.reputation = 30;
+    state.company.brandAwareness = 20;
+    state.company.employees = { engineers: 5, designers: 2, marketers: 2 };
+    state.company.salaryPerWeek = 15000;
+    state.company.factories = [{ id:'f1', name:'Factory Alpha', automationLevel:1, capacity:500, maintenanceCost:5000 }];
+    state.company.rndPoints = 0;
+    state.company.rndPointsPerWeek = 50;
+    state.company.unlockedTechs = [];
+    state.company.researchQueue = [];
+    state.company._marketShare = 0;
+    state.products = [];
+    state.market.competitors = [];
+    state.market.activeTrends = [];
+    state.market.recentEvents = [];
+    state.market._costMultiplier = 1.0;
+    state.market._costMultiplierWeeks = 0;
+    state.market._demandMultiplier = 1.0;
+    state.market._demandMultiplierWeeks = 0;
+    state.market._negativeEventsSurvived = 0;
+    state.finance.weeklyIncome = 0;
+    state.finance.weeklyExpenses = 0;
+    state.finance.history = [];
+    state.finance.totalRevenue = 0;
+    state.finance.totalExpenses = 0;
+    state.finance._bankruptWeeks = 0;
+    state.finance._profitStreak = 0;
+    state.finance._maxProfitStreak = 0;
+    deleteSave();
+    ITG.Market.init(state);
+    ITG.EventBus.emit('game:newgame');
+  }
+
+  function _checkVictoryDefeat() {
+    if (state.meta.gameEnded) return;
+    const net = state.finance.weeklyIncome - state.finance.weeklyExpenses;
+    if (net > 0) {
+      state.finance._profitStreak++;
+      if (state.finance._profitStreak > state.finance._maxProfitStreak) state.finance._maxProfitStreak = state.finance._profitStreak;
+    } else {
+      state.finance._profitStreak = 0;
+    }
+    if (state.company.money < 0) {
+      state.finance._bankruptWeeks++;
+      if (state.finance._bankruptWeeks >= 4 && state.company.money < -500000) {
+        state.meta.gameOver = true;
+        state.meta.gameEnded = true;
+        ITG.EventBus.emit('game:defeat');
+        return;
+      }
+      if (state.finance._bankruptWeeks === 2) ITG.EventBus.emit('toast:show', { message: ITG.I18n ? ITG.I18n.t('game.bankruptWarn', { weeks: 2 }) : 'Bankruptcy warning!', type: 'warning' });
+      if (state.finance._bankruptWeeks === 3) ITG.EventBus.emit('toast:show', { message: ITG.I18n ? ITG.I18n.t('game.bankruptWarnCritical') : 'Critical bankruptcy!', type: 'error' });
+    } else {
+      state.finance._bankruptWeeks = 0;
+    }
+    if ((state.company._marketShare || 0) >= 60 && state.company.money >= 50000000) {
+      state.meta.victory = true;
+      state.meta.gameEnded = true;
+      ITG.EventBus.emit('game:victory');
+    }
+  }
+
+  function _applyDynamicDifficulty() {
+    if (state.meta.year < 2) return;
+    state.market.competitors.forEach(function(c) {
+      c.products.forEach(function(p) {
+        if (Math.random() < 0.1) p.pressScore = Math.min(100, (p.pressScore || 50) + 1.5);
+        if (Math.random() < 0.08) p.weeklySales = Math.floor((p.weeklySales || 50) * 1.05);
+      });
+    });
+  }
 
   function getWeekLabel() {
     return `Year ${state.meta.year}, Week ${state.meta.week}`;
@@ -541,7 +620,8 @@ ITG.GameState = (function () {
     p.stage        = 'launched';   // ui.js alias
     p.weekLaunched = state.meta.week + (state.meta.year - 1) * 52;
     ITG.EventBus.emit('product:launched', { product: p });
-    _addNews('🚀', `${p.name} launched!`, `Retail price: $${p.targetRetailPrice} | Est. press score: ${p.pressScore}`);
+    if (window.ITG.Sound) ITG.Sound.play('productLaunch');
+    _addNews('🚀', `${p.name} launched!`, `Retail price: ${p.targetRetailPrice} | Est. press score: ${p.pressScore}`);
   }
 
   function discontinueProduct(productId) {
@@ -565,7 +645,8 @@ ITG.GameState = (function () {
     state.company.employees[role] = (state.company.employees[role] || 0) + 1;
     state.company.salaryPerWeek += SALARY[role];
     _updateRnDRate();
-    _addNews('👥', `New ${role.slice(0,-1)} hired`, `Weekly cost: +$${SALARY[role].toLocaleString()}`);
+    if (window.ITG.Sound) ITG.Sound.play('hire');
+    _addNews('👥', `New ${role.slice(0,-1)} hired`, `Weekly cost: +${SALARY[role].toLocaleString()}`);
     return true;
   }
 
@@ -589,6 +670,7 @@ ITG.GameState = (function () {
     state.company.money -= COST;
     factory.automationLevel++;
     factory.capacity = Math.round(factory.capacity * 1.3);
+    if (window.ITG.Sound) ITG.Sound.play('factoryUpgrade');
     _addNews('🏭', 'Factory upgraded!', `Automation Level ${factory.automationLevel} | Capacity: ${factory.capacity} units/week`);
     return true;
   }
@@ -644,6 +726,7 @@ ITG.GameState = (function () {
           if (comp) comp.unlocked = true;
         });
         _addNews('✅', `Research complete: ${tech.name}`, `Unlocked: ${tech.unlocks.join(', ') || 'passive effect'}`);
+        if (window.ITG.Sound) ITG.Sound.play('researchComplete');
         ITG.EventBus.emit('toast:show', { message: `🔬 Research complete: ${tech.name}!`, type: 'success' });
       }
     });
@@ -666,6 +749,9 @@ ITG.GameState = (function () {
 
     // 2. R&D progress
     _tickResearch();
+
+    // 2.5. Dynamic difficulty (year 2+)
+    _applyDynamicDifficulty();
 
     // 3. Calculate expenses
     const factoryMaint = state.company.factories.reduce((s, f) => s + f.maintenanceCost, 0);
@@ -715,6 +801,13 @@ ITG.GameState = (function () {
     // 10. Auto-save every 4 weeks
     if (state.meta.week % 4 === 0) save();
 
+    // 11. Check victory / defeat
+    _checkVictoryDefeat();
+
+    // 12. Check achievements
+    if (window.ITG.Achievements) ITG.Achievements.checkAll(state);
+
+    if (window.ITG.Sound) ITG.Sound.play('weekTick');
     ITG.EventBus.emit('week:advance', { week: state.meta.week, year: state.meta.year, profit: weeklyIncome - weeklyExpenses });
   }
 
@@ -762,5 +855,5 @@ ITG.GameState = (function () {
   }
 
   // Merge state into the exported object for direct access (e.g., GameState.meta.week)
-  return Object.assign(state, { advance, save, load, deleteSave, addProduct, launchProduct, discontinueProduct, hirePerson, firePerson, upgradeFactory, startResearch, getWeekLabel });
+  return Object.assign(state, { advance, save, load, deleteSave, newGame, addProduct, launchProduct, discontinueProduct, hirePerson, firePerson, upgradeFactory, startResearch, getWeekLabel });
 })();

@@ -2089,10 +2089,140 @@
 
   // ─── SCREEN NAVIGATION & REFRESH ───────────────────────────────────────────
 
+  function renderAchievements() {
+    const el = document.getElementById('screen-achievements');
+    if (!el) return;
+    const list = (window.ITG.Achievements) ? ITG.Achievements.getList() : [];
+    const unlocked = (window.ITG.Achievements) ? ITG.Achievements.getUnlockedCount() : 0;
+    const total = (window.ITG.Achievements) ? ITG.Achievements.getTotalCount() : 0;
+    el.innerHTML = `
+      <div style="padding:20px;max-width:1400px;margin:0 auto;display:flex;flex-direction:column;gap:20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:#141726;padding:16px 20px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
+          <div>
+            <div style="font-size:20px;font-weight:700;color:#fff;">🏆 Achievements</div>
+            <div style="font-size:13px;color:#94a3b8;">${unlocked} / ${total} unlocked</div>
+          </div>
+          <div class="progress-bar-wrap" style="width:200px;height:8px;">
+            <div class="progress-bar-fill" style="width:${total>0?Math.round(unlocked/total*100):0}%;background:linear-gradient(90deg,#f59e0b,#fbbf24);"></div>
+          </div>
+        </div>
+        <div class="grid-3">
+          ${list.map(a => `
+            <div class="card ${a.unlocked?'':'dimmed-card'}" style="display:flex;flex-direction:column;">
+              <div class="card-header">
+                <span style="font-size:28px;">${a.icon}</span>
+                ${a.unlocked?'<span class="badge badge-green">✅ Unlocked</span>':'<span class="badge badge-yellow">🔒 Locked</span>'}
+              </div>
+              <div class="card-body" style="display:flex;flex-direction:column;gap:8px;">
+                <div style="font-size:15px;font-weight:700;color:#fff;">${escapeHtml(a.name)}</div>
+                <div style="font-size:12px;color:#94a3b8;">${escapeHtml(a.desc)}</div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const body = document.getElementById('settings-body');
+    const titleEl = document.getElementById('settings-title');
+    if (!modal || !body) return;
+    const t = window.ITG.I18n ? ITG.I18n.t.bind(ITG.I18n) : (k => k);
+    if (titleEl) titleEl.textContent = t('settings.title');
+    const snd = window.ITG.Sound ? ITG.Sound.getSettings() : {enabled:true,musicEnabled:true,vol:0.3};
+    const langs = window.ITG.I18n ? ITG.I18n.getAvailableLanguages() : ['en','ru'];
+    const curLang = window.ITG.I18n ? ITG.I18n.getLanguage() : 'en';
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div>
+          <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="set-sound" ${snd.enabled?'checked':''}>
+            <span>${t('settings.sound')}</span>
+          </label>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:flex;align-items:center;gap:10px;">
+            <input type="checkbox" id="set-music" ${snd.musicEnabled?'checked':''}>
+            <span>${t('settings.music')}</span>
+          </label>
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:block;margin-bottom:8px;">${t('settings.volume')}</label>
+          <input type="range" id="set-vol" min="0" max="1" step="0.1" value="${snd.vol}" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:block;margin-bottom:8px;">${t('settings.language')}</label>
+          <select id="set-lang" style="width:100%;background:#0b0d18;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:10px;color:#fff;">
+            ${langs.map(l => `<option value="${l}" ${l===curLang?'selected':''}>${l==='ru'?'Русский':'English'}</option>`).join('')}
+          </select>
+        </div>
+        <div style="border-top:1px solid rgba(255,255,255,0.08);padding-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button id="set-save" class="btn-primary" style="padding:10px 18px;cursor:pointer;font-weight:600;">${t('settings.saveNow')}</button>
+          <button id="set-reset" class="btn-danger" style="padding:10px 18px;cursor:pointer;">${t('settings.resetGame')}</button>
+        </div>
+        <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);border-radius:8px;padding:14px;">
+          <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:8px;">${t('settings.howToPlay')}</div>
+          <div style="font-size:12px;color:#94a3b8;display:flex;flex-direction:column;gap:4px;">
+            <div>${t('howto.step1')}</div><div>${t('howto.step2')}</div><div>${t('howto.step3')}</div>
+            <div>${t('howto.step4')}</div><div>${t('howto.step5')}</div><div>${t('howto.step6')}</div>
+          </div>
+        </div>
+      </div>
+    `;
+    modal.style.display = 'flex';
+    const cbSound = body.querySelector('#set-sound');
+    const cbMusic = body.querySelector('#set-music');
+    const rngVol = body.querySelector('#set-vol');
+    const selLang = body.querySelector('#set-lang');
+    if (cbSound) cbSound.addEventListener('change', e => { if (window.ITG.Sound) ITG.Sound.setEnabled(e.target.checked); });
+    if (cbMusic) cbMusic.addEventListener('change', e => { if (window.ITG.Sound) ITG.Sound.setMusicEnabled(e.target.checked); });
+    if (rngVol) rngVol.addEventListener('input', e => { if (window.ITG.Sound) ITG.Sound.setVolume(Number(e.target.value)); });
+    if (selLang) selLang.addEventListener('change', e => { if (window.ITG.I18n) ITG.I18n.setLanguage(e.target.value); });
+    const btnSave = body.querySelector('#set-save');
+    if (btnSave) btnSave.addEventListener('click', () => {
+      if (window.ITG.GameState) ITG.GameState.save();
+      if (window.ITG.Sound) ITG.Sound.play('save');
+      ITG.UI.showToast(t('settings.saved'), 'success');
+    });
+    const btnReset = body.querySelector('#set-reset');
+    if (btnReset) btnReset.addEventListener('click', () => {
+      if (confirm(t('settings.confirmReset'))) {
+        if (window.ITG.GameState && ITG.GameState.newGame) ITG.GameState.newGame();
+        if (window.ITG.Achievements) ITG.Achievements.reset();
+        updateHUD();
+        ITG.UI.refreshAll();
+        ITG.UI.showScreen('dashboard');
+        modal.style.display = 'none';
+        ITG.UI.showToast(t('settings.reset'), 'info');
+      }
+    });
+  }
+
+  function showGameStateOverlay(type) {
+    const overlay = document.getElementById('game-state-overlay');
+    if (!overlay) return;
+    const t = window.ITG.I18n ? ITG.I18n.t.bind(ITG.I18n) : (k => k);
+    const iconEl = document.getElementById('game-state-icon');
+    const titleEl = document.getElementById('game-state-title');
+    const descEl = document.getElementById('game-state-desc');
+    if (type === 'victory') {
+      if (iconEl) iconEl.textContent = '🏆';
+      if (titleEl) { titleEl.textContent = t('game.victory'); titleEl.style.color = '#10b981'; }
+      if (descEl) descEl.textContent = t('game.victoryDesc');
+    } else {
+      if (iconEl) iconEl.textContent = '💀';
+      if (titleEl) { titleEl.textContent = t('game.defeat'); titleEl.style.color = '#ef4444'; }
+      if (descEl) descEl.textContent = t('game.defeatDesc');
+    }
+    overlay.style.display = 'flex';
+  }
+
   function showScreen(name) {
     currentScreen = name || 'dashboard';
 
-    const screens = ['dashboard', 'products', 'rnd', 'market', 'finance', 'hr'];
+    const screens = ['dashboard', 'products', 'rnd', 'market', 'finance', 'hr', 'achievements'];
     screens.forEach(s => {
       const el = document.getElementById(`screen-${s}`);
       if (el) {
@@ -2138,6 +2268,9 @@
         break;
       case 'hr':
         renderHR();
+        break;
+      case 'achievements':
+        renderAchievements();
         break;
       default:
         renderDashboard();
@@ -2205,6 +2338,8 @@
     openNewProductModal: openNewProductModal,
     openDeviceEditor: openDeviceEditor,
     closeDeviceEditor: closeDeviceEditor,
+    openSettingsModal: openSettingsModal,
+    showGameStateOverlay: showGameStateOverlay,
   };
 
 })();
