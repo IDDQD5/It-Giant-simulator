@@ -722,8 +722,12 @@ html, body {
   inset: 0;
   z-index: 1000;
   background: var(--bg-primary);
-  display: flex;
+  display: none;
   flex-direction: column;
+}
+
+#editor-modal.active {
+  display: flex !important;
 }
 
 #editor-toolbar {
