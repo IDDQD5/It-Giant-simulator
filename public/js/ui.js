@@ -2124,6 +2124,37 @@
     `;
   }
 
+  function applyGraphicsQuality(value) {
+    const quality = ['low', 'medium', 'high'].includes(value) ? value : 'high';
+    document.documentElement.dataset.graphics = quality;
+    try { localStorage.setItem('itg_graphics', quality); } catch (e) {}
+  }
+
+  function showStartScreen(hasSave) {
+    const screen = document.getElementById('start-screen');
+    if (!screen) return;
+    const t = window.ITG.I18n ? window.ITG.I18n.t.bind(window.ITG.I18n) : (key => key);
+    screen.querySelectorAll('[data-start-text]').forEach(element => {
+      const key = element.getAttribute('data-start-text');
+      if (key) element.textContent = t(`start.${key}`);
+    });
+    const continueButton = document.getElementById('start-continue-btn');
+    if (continueButton) continueButton.disabled = !hasSave;
+    screen.style.display = 'flex';
+    const hide = () => { screen.style.display = 'none'; };
+    const newButton = document.getElementById('start-new-btn');
+    const settingsButton = document.getElementById('start-settings-btn');
+    if (continueButton) continueButton.onclick = hide;
+    if (newButton) newButton.onclick = () => {
+      if (window.ITG.GameState) window.ITG.GameState.newGame();
+      if (window.ITG.Market) window.ITG.Market.init(window.ITG.GameState);
+      if (window.ITG.Achievements) window.ITG.Achievements.reset();
+      refreshAll();
+      hide();
+    };
+    if (settingsButton) settingsButton.onclick = openSettingsModal;
+  }
+
   function openSettingsModal() {
     const modal = document.getElementById('settings-modal');
     const body = document.getElementById('settings-body');
@@ -2133,6 +2164,9 @@
     if (titleEl) titleEl.textContent = t('settings.title');
     const snd = window.ITG.Sound ? ITG.Sound.getSettings() : {enabled:true,musicEnabled:true,vol:0.3};
     const langs = window.ITG.I18n ? ITG.I18n.getAvailableLanguages() : ['en','ru'];
+    let graphics = 'high';
+    try { graphics = localStorage.getItem('itg_graphics') || 'high'; } catch (e) {}
+    applyGraphicsQuality(graphics);
     const curLang = window.ITG.I18n ? ITG.I18n.getLanguage() : 'en';
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;">
@@ -2151,6 +2185,14 @@
         <div>
           <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:block;margin-bottom:8px;">${t('settings.volume')}</label>
           <input type="range" id="set-vol" min="0" max="1" step="0.1" value="${snd.vol}" style="width:100%;">
+        </div>
+        <div>
+          <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:block;margin-bottom:8px;">${t('settings.graphics')}</label>
+          <select id="set-graphics" style="width:100%;background:#0b0d18;border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:10px;color:#fff;">
+            <option value="low" ${graphics==='low'?'selected':''}>${t('settings.graphicsLow')}</option>
+            <option value="medium" ${graphics==='medium'?'selected':''}>${t('settings.graphicsMedium')}</option>
+            <option value="high" ${graphics==='high'?'selected':''}>${t('settings.graphicsHigh')}</option>
+          </select>
         </div>
         <div>
           <label style="font-size:13px;font-weight:600;color:#cbd5e1;display:block;margin-bottom:8px;">${t('settings.language')}</label>
@@ -2176,10 +2218,16 @@
     const cbMusic = body.querySelector('#set-music');
     const rngVol = body.querySelector('#set-vol');
     const selLang = body.querySelector('#set-lang');
+    const selGraphics = body.querySelector('#set-graphics');
     if (cbSound) cbSound.addEventListener('change', e => { if (window.ITG.Sound) ITG.Sound.setEnabled(e.target.checked); });
     if (cbMusic) cbMusic.addEventListener('change', e => { if (window.ITG.Sound) ITG.Sound.setMusicEnabled(e.target.checked); });
     if (rngVol) rngVol.addEventListener('input', e => { if (window.ITG.Sound) ITG.Sound.setVolume(Number(e.target.value)); });
-    if (selLang) selLang.addEventListener('change', e => { if (window.ITG.I18n) ITG.I18n.setLanguage(e.target.value); });
+    if (selLang) selLang.addEventListener('change', e => {
+      if (window.ITG.I18n) ITG.I18n.setLanguage(e.target.value);
+      refreshAll();
+      openSettingsModal();
+    });
+    if (selGraphics) selGraphics.addEventListener('change', e => applyGraphicsQuality(e.target.value));
     const btnSave = body.querySelector('#set-save');
     if (btnSave) btnSave.addEventListener('click', () => {
       if (window.ITG.GameState) ITG.GameState.save();
@@ -2304,6 +2352,9 @@
   function init() {
     injectManagerStyles();
     getModalRoot();
+    let graphics = 'high';
+    try { graphics = localStorage.getItem('itg_graphics') || 'high'; } catch (e) {}
+    applyGraphicsQuality(graphics);
 
     // Wire up week advancement listener
     if (window.ITG.EventBus) {
@@ -2339,6 +2390,7 @@
     openDeviceEditor: openDeviceEditor,
     closeDeviceEditor: closeDeviceEditor,
     openSettingsModal: openSettingsModal,
+    showStartScreen: showStartScreen,
     showGameStateOverlay: showGameStateOverlay,
   };
 

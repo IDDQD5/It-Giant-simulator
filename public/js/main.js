@@ -245,6 +245,7 @@
             app.classList.add('is-ready');
 
             ITG.UI.showScreen('dashboard');
+            ITG.UI.showStartScreen(loaded);
             ITG.UI.showToast(ITG.I18n ? ITG.I18n.t('toast.welcome') : 'Welcome to IT Giant Simulator!', 'info');
             console.log('[ITG Boot] App revealed successfully');
           } catch (err) {
