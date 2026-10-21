@@ -7,10 +7,22 @@ en:{'hud.week':'WEEK','hud.cash':'CASH','hud.rep':'REP','hud.nextWeek':'Next Wee
 ru:{'hud.week':'НЕДЕЛЯ','hud.cash':'КАССА','hud.rep':'РЕП','hud.nextWeek':'След. неделя','hud.settings':'Настройки','nav.dashboard':'Панель','nav.products':'Продукты','nav.rnd':'НИОКР','nav.hr':'Кадры','nav.market':'Рынок','nav.finance':'Финансы','nav.achievements':'Достижения','ach.title':'Достижения','ach.unlocked':'Получено','ach.locked':'Заблокировано','ach.reward':'Награда','settings.title':'Настройки','settings.sound':'Звуковые эффекты','settings.graphics':'Качество графики','settings.graphicsLow':'Низкое','settings.graphicsMedium':'Среднее','settings.graphicsHigh':'Высокое','start.kicker':'БИЗНЕС-СИМУЛЯТОР','start.title':'IT Giant','start.subtitle':'Постройте следующую технологическую империю.','start.continue':'Продолжить игру','start.new':'Новая игра','start.settings':'Настройки','settings.music':'Фоновая музыка','settings.volume':'Громкость','settings.language':'Язык','settings.close':'Закрыть','settings.saveNow':'Сохранить','settings.resetGame':'Сбросить игру','settings.howToPlay':'Как играть','settings.confirmReset':'Вы уверены? Это удалит сохранение и начнёт новую игру.','settings.saved':'Игра сохранена!','settings.reset':'Игра сброшена. Начинаем заново...','howto.title':'Как играть','howto.step1':'1. Спроектируйте ПК в разделе «Продукты» через 3D-конструктор.','howto.step2':'2. Выпустите продукт на рынок.','howto.step3':'3. Инвестируйте в НИОКР для открытия компонентов.','howto.step4':'4. Нанимайте сотрудников.','howto.step5':'5. Нажимайте «След. неделя» для симуляции.','howto.step6':'6. Победа: 60% рынка + $50 млн. Не обанкротиться!','game.victory':'ПОБЕДА!','game.victoryDesc':'Вы доминируете на рынке ПК. Поздравляем!','game.continue':'Продолжить игру','game.defeat':'КОНЕЦ ИГРЫ','game.defeatDesc':'Ваша компания обанкротилась. Попробуйте снова!','game.newGame':'Новая игра','game.bankruptWarn':'ВНИМАНИЕ: деньги заканчиваются! Осталось {weeks} недель.','game.bankruptWarnCritical':'КРИТИЧНО: банкротство неизбежно!','toast.welcome':'Добро пожаловать в IT Giant Simulator! Спроектируйте первый ПК в «Продукты».','toast.deviceSaved':'Устройство сохранено! Перейдите в «Продукты» для запуска.'}};
 let cl='en';
 function dl(){try{const s=localStorage.getItem('itg_lang');if(s&&dict[s])return s;}catch(e){}return(navigator.language||'en').toLowerCase().startsWith('ru')?'ru':'en';}
-function init(){cl=dl();}
+function init(){cl=dl();if(typeof document!=='undefined')applyTranslations();}
 function setLanguage(l){if(!dict[l])return;cl=l;try{localStorage.setItem('itg_lang',l);}catch(e){}}
 function getLanguage(){return cl;}
 function getAvailableLanguages(){return Object.keys(dict);}
+function applyTranslations(){
+  const root=document;
+  root.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    if(key) el.textContent=t(key);
+  });
+  root.querySelectorAll('[data-start-text]').forEach(el=>{
+    const key=el.getAttribute('data-start-text');
+    if(key) el.textContent=t('start.'+key);
+  });
+}
+function setLanguage(l){if(!dict[l])return;cl=l;try{localStorage.setItem('itg_lang',l);}catch(e){}if(typeof document!=='undefined')applyTranslations();}
 function t(k,p){const d=dict[cl]||dict.en;let r=d[k]||dict.en[k]||k;if(p)Object.keys(p).forEach(x=>{r=r.replace('{'+x+'}',p[x]);});return r;}
-window.ITG.I18n={init,t,setLanguage,getLanguage,getAvailableLanguages};
+window.ITG.I18n={init,t,setLanguage,getLanguage,getAvailableLanguages,applyTranslations};
 })();

@@ -108,6 +108,7 @@
         ITG.GameState.meta.paused = !ITG.GameState.meta.paused;
         btnPause.textContent = ITG.GameState.meta.paused ? '▶' : '⏸';
         btnPause.title = ITG.GameState.meta.paused ? 'Resume' : 'Pause';
+        if (window.ITG.Sound) ITG.Sound.play('click');
       });
     }
 
@@ -120,6 +121,15 @@
         ITG.GameState.meta.speed = speeds[(speeds.indexOf(cur) + 1) % speeds.length];
         btnSpeed.textContent = ITG.GameState.meta.speed + 'x';
         startAutoAdvance();
+        if (window.ITG.Sound) ITG.Sound.play('click');
+      });
+    }
+
+    // Next Week button
+    const btnAdvance = document.getElementById('btn-advance');
+    if (btnAdvance) {
+      btnAdvance.addEventListener('click', function () {
+        if (window.ITG.Sound) ITG.Sound.play('weekTick');
       });
     }
 
@@ -128,6 +138,7 @@
       item.addEventListener('click', function () {
         const screen = this.getAttribute('data-screen');
         if (screen) ITG.UI.showScreen(screen);
+        if (window.ITG.Sound) ITG.Sound.play('tab');
       });
     });
 
@@ -136,6 +147,7 @@
     if (editorCloseBtn) {
       editorCloseBtn.addEventListener('click', function () {
         ITG.Editor.close();
+        if (window.ITG.Sound) ITG.Sound.play('close');
       });
     }
 
@@ -144,6 +156,7 @@
     if (btnSettings) {
       btnSettings.addEventListener('click', function () {
         if (ITG.Sound) ITG.Sound.ensureContext();
+        if (ITG.Sound) ITG.Sound.play('open');
         if (ITG.UI && ITG.UI.openSettingsModal) ITG.UI.openSettingsModal();
       });
     }
@@ -153,6 +166,7 @@
     if (settingsCloseBtn) {
       settingsCloseBtn.addEventListener('click', function () {
         document.getElementById('settings-modal').style.display = 'none';
+        if (window.ITG.Sound) ITG.Sound.play('close');
       });
     }
 
@@ -220,6 +234,19 @@
     }
     document.addEventListener('click', startMusicOnce);
     document.addEventListener('keydown', startMusicOnce);
+
+    const startScreen = document.getElementById('start-screen');
+    if (startScreen) {
+      startScreen.querySelectorAll('button').forEach(btn => {
+        if (window.ITG.Sound) btn.addEventListener('mouseenter', () => ITG.Sound.play('hover'));
+      });
+      const startMusicOnce = () => { if (window.ITG.Sound) { ITG.Sound.ensureContext(); ITG.Sound.startMusic(); } };
+      startScreen.addEventListener('click', startMusicOnce, { once: true });
+    }
+    // Global hover sounds for main UI buttons
+    document.querySelectorAll('#hud-controls .hud-btn, #sidebar .nav-item, .start-btn, .hud-btn').forEach(btn => {
+      if (window.ITG.Sound) btn.addEventListener('mouseenter', () => ITG.Sound.play('hover'));
+    });
 
     // ── Try to load saved game ─────────────────────────────────────────────
     setLoadingStatus('Loading saved game...');

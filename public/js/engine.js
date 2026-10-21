@@ -656,6 +656,7 @@ ITG.GameState = (function () {
     state.company.employees[role]--;
     state.company.salaryPerWeek -= SALARY[role];
     _updateRnDRate();
+    if (window.ITG.Sound) ITG.Sound.play('fire');
     return true;
   }
 
@@ -670,7 +671,7 @@ ITG.GameState = (function () {
     state.company.money -= COST;
     factory.automationLevel++;
     factory.capacity = Math.round(factory.capacity * 1.3);
-    if (window.ITG.Sound) ITG.Sound.play('factoryUpgrade');
+    if (window.ITG.Sound) { ITG.Sound.play('purchase'); ITG.Sound.play('factoryUpgrade'); }
     _addNews('🏭', 'Factory upgraded!', `Automation Level ${factory.automationLevel} | Capacity: ${factory.capacity} units/week`);
     return true;
   }
@@ -695,7 +696,8 @@ ITG.GameState = (function () {
 
     state.company.money -= tech.cost;
     state.company.researchQueue.push({ techId, pointsInvested: 0 });
-    _addNews('🔬', `Research started: ${tech.name}`, `Cost: $${tech.cost.toLocaleString()} | Req: ${tech.pointsRequired} pts`);
+    if (window.ITG.Sound) ITG.Sound.play('purchase');
+    _addNews('🔬', `Research started: ${tech.name}`, `Cost: ${tech.cost.toLocaleString()} | Req: ${tech.pointsRequired} pts`);
     return true;
   }
 
@@ -808,7 +810,7 @@ ITG.GameState = (function () {
     if (window.ITG.Achievements) ITG.Achievements.checkAll(state);
 
     if (window.ITG.Sound) ITG.Sound.play('weekTick');
-    ITG.EventBus.emit('week:advance', { week: state.meta.week, year: state.meta.year, profit: weeklyIncome - weeklyExpenses });
+      if (weeklyIncome > weeklyExpenses && window.ITG.Sound) ITG.Sound.play('money');
   }
 
   // ── Save / Load ────────────────────────────────────────────

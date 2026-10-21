@@ -2144,15 +2144,16 @@
     const hide = () => { screen.style.display = 'none'; };
     const newButton = document.getElementById('start-new-btn');
     const settingsButton = document.getElementById('start-settings-btn');
-    if (continueButton) continueButton.onclick = hide;
+    if (continueButton) continueButton.onclick = () => { if (window.ITG.Sound) ITG.Sound.play('click'); hide(); };
     if (newButton) newButton.onclick = () => {
+      if (window.ITG.Sound) ITG.Sound.play('click');
       if (window.ITG.GameState) window.ITG.GameState.newGame();
       if (window.ITG.Market) window.ITG.Market.init(window.ITG.GameState);
       if (window.ITG.Achievements) window.ITG.Achievements.reset();
       refreshAll();
       hide();
     };
-    if (settingsButton) settingsButton.onclick = openSettingsModal;
+    if (settingsButton) settingsButton.onclick = () => { if (window.ITG.Sound) ITG.Sound.play('open'); openSettingsModal(); };
   }
 
   function openSettingsModal() {
@@ -2223,9 +2224,9 @@
     if (cbMusic) cbMusic.addEventListener('change', e => { if (window.ITG.Sound) ITG.Sound.setMusicEnabled(e.target.checked); });
     if (rngVol) rngVol.addEventListener('input', e => { if (window.ITG.Sound) ITG.Sound.setVolume(Number(e.target.value)); });
     if (selLang) selLang.addEventListener('change', e => {
-      if (window.ITG.I18n) ITG.I18n.setLanguage(e.target.value);
-      refreshAll();
-      openSettingsModal();
+    if (window.ITG.I18n && ITG.I18n.applyTranslations) ITG.I18n.applyTranslations();
+    refreshAll();
+    openSettingsModal();
     });
     if (selGraphics) selGraphics.addEventListener('change', e => applyGraphicsQuality(e.target.value));
     const btnSave = body.querySelector('#set-save');
