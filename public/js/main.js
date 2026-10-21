@@ -125,8 +125,7 @@
       });
     }
 
-    // Next Week button
-    const btnAdvance = document.getElementById('btn-advance');
+    // Next Week button sound
     if (btnAdvance) {
       btnAdvance.addEventListener('click', function () {
         if (window.ITG.Sound) ITG.Sound.play('weekTick');
