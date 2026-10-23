@@ -576,7 +576,7 @@
     }
 
     // Verify or inject full inner layout
-    if (!document.getElementById('editor-canvas') || !document.getElementById('editor-comp-list')) {
+    if (!modal.querySelector('.editor-main-layout') || !modal.querySelector('#editor-canvas') || !modal.querySelector('#editor-comp-list')) {
       modal.innerHTML = `
         <div class="editor-modal-header">
           <div class="editor-title-group">
