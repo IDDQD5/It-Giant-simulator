@@ -158,6 +158,80 @@
     return map[type] || 0x334466;
   }
 
+  function makeMaterial(color, options) {
+    const settings = options || {};
+    return new THREE.MeshPhysicalMaterial({
+      color: color,
+      metalness: settings.metalness === undefined ? 0.35 : settings.metalness,
+      roughness: settings.roughness === undefined ? 0.42 : settings.roughness,
+      clearcoat: settings.clearcoat === undefined ? 0.15 : settings.clearcoat,
+      clearcoatRoughness: settings.clearcoatRoughness === undefined ? 0.2 : settings.clearcoatRoughness,
+      transparent: Boolean(settings.transparent),
+      opacity: settings.opacity === undefined ? 1 : settings.opacity,
+      side: settings.side || THREE.FrontSide,
+    });
+  }
+
+  function addCylinder(sceneRoot, radius, depth, position, material, segments) {
+    const mesh = new THREE.Mesh(
+      new THREE.CylinderGeometry(radius, radius, depth, segments || 24),
+      material
+    );
+    mesh.position.set(position[0], position[1], position[2]);
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    sceneRoot.add(mesh);
+    return mesh;
+  }
+
+  function addCaseDetails() {
+    const frameMaterial = makeMaterial(0x202733, { metalness: 0.72, roughness: 0.25, clearcoat: 0.35 });
+    const darkMaterial = makeMaterial(0x080b10, { metalness: 0.35, roughness: 0.62 });
+    const rubberMaterial = makeMaterial(0x050608, { metalness: 0.05, roughness: 0.9 });
+
+    const beams = [
+      [7.9, 0.16, 0.16, [0, 1.92, 2.42]], [7.9, 0.16, 0.16, [0, -1.92, 2.42]],
+      [0.16, 3.7, 0.16, [-3.86, 0, 2.42]], [0.16, 3.7, 0.16, [3.86, 0, 2.42]],
+      [7.8, 0.12, 0.12, [0, 1.82, -2.42]], [7.8, 0.12, 0.12, [0, -1.82, -2.42]],
+    ];
+    beams.forEach(item => {
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(item[0], item[1], item[2]), frameMaterial);
+      mesh.position.set(item[3][0], item[3][1], item[3][2]);
+      mesh.castShadow = true;
+      scene.add(mesh);
+    });
+
+    [-3.15, 3.15].forEach(x => [-1.65, 1.65].forEach(z => {
+      const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.18, 24), rubberMaterial);
+      foot.position.set(x, -2.12, z);
+      foot.castShadow = true;
+      scene.add(foot);
+    }));
+
+    const rearFan = new THREE.Group();
+    rearFan.position.set(-2.65, 0.25, -2.38);
+    rearFan.rotation.x = Math.PI / 2;
+    addCylinder(rearFan, 0.72, 0.08, [0, 0, 0], darkMaterial, 32);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(0.72, 0.055, 8, 32), makeMaterial(0x334455, { metalness: 0.7, roughness: 0.3 }));
+    ring.position.z = 0.06;
+    rearFan.add(ring);
+    for (let i = 0; i < 7; i++) {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.55, 0.035), makeMaterial(0x29313c, { metalness: 0.3, roughness: 0.5 }));
+      blade.position.z = 0.08;
+      blade.rotation.z = (Math.PI * 2 * i) / 7;
+      rearFan.add(blade);
+    }
+    scene.add(rearFan);
+
+    for (let row = 0; row < 4; row++) {
+      for (let col = 0; col < 16; col++) {
+        const vent = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.025, 0.5), darkMaterial);
+        vent.position.set(-3.2 + col * 0.42, 1.5 - row * 0.28, 2.48);
+        scene.add(vent);
+      }
+    }
+  }
+
   function getComponents() {
     if (window.ITG && window.ITG.Data && Array.isArray(window.ITG.Data.components) && window.ITG.Data.components.length > 0) {
       return window.ITG.Data.components;
@@ -630,16 +704,18 @@
       antialias: true,
       alpha: true,
     });
-    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.setSize(width, height, false);
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.2;
+    renderer.toneMappingExposure = 1.05;
+    renderer.outputEncoding = THREE.sRGBEncoding;
 
     // Scene
     scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0c0f1a);
+    scene.background = new THREE.Color(0x090d14);
+    scene.fog = new THREE.Fog(0x090d14, 18, 34);
 
     // Camera
     camera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
@@ -660,23 +736,27 @@
     raycaster = new THREE.Raycaster();
 
     // Studio Lighting
-    const ambient = new THREE.AmbientLight(0x404060, 0.6);
+    const ambient = new THREE.HemisphereLight(0xb9d4ee, 0x101722, 1.05);
     scene.add(ambient);
 
-    const keyLight = new THREE.DirectionalLight(0xffffff, 1.5);
-    keyLight.position.set(5, 10, 5);
+    const keyLight = new THREE.DirectionalLight(0xfff4df, 2.2);
+    keyLight.position.set(6, 11, 8);
     keyLight.castShadow = true;
-    keyLight.shadow.mapSize.width = 1024;
-    keyLight.shadow.mapSize.height = 1024;
-    keyLight.shadow.bias = -0.001;
+    keyLight.shadow.mapSize.width = 1536;
+    keyLight.shadow.mapSize.height = 1536;
+    keyLight.shadow.camera.left = -12;
+    keyLight.shadow.camera.right = 12;
+    keyLight.shadow.camera.top = 12;
+    keyLight.shadow.camera.bottom = -12;
+    keyLight.shadow.bias = -0.0005;
     scene.add(keyLight);
 
-    const fillLight = new THREE.DirectionalLight(0x8888ff, 0.6);
-    fillLight.position.set(-5, 3, -3);
+    const fillLight = new THREE.DirectionalLight(0x8db9e8, 0.8);
+    fillLight.position.set(-8, 4, 2);
     scene.add(fillLight);
 
-    const rimLight = new THREE.DirectionalLight(0x00d4ff, 0.9);
-    rimLight.position.set(0, 5, -10);
+    const rimLight = new THREE.DirectionalLight(0x8eeaff, 1.1);
+    rimLight.position.set(2, 6, -10);
     scene.add(rimLight);
 
     // RGB Accent PointLight
@@ -690,16 +770,28 @@
     scene.add(rgbLight);
 
     // Grid Floor
-    const gridHelper = new THREE.GridHelper(20, 20, 0x00d4ff, 0x1f293d);
-    gridHelper.position.y = -2.01;
+    const floor = new THREE.Mesh(
+      new THREE.CircleGeometry(18, 64),
+      makeMaterial(0x111923, { metalness: 0.18, roughness: 0.72 })
+    );
+    floor.rotation.x = -Math.PI / 2;
+    floor.position.y = -2.08;
+    floor.receiveShadow = true;
+    scene.add(floor);
+
+    const gridHelper = new THREE.GridHelper(20, 20, 0x29485d, 0x182633);
+    gridHelper.position.y = -2.06;
+    gridHelper.material.opacity = 0.28;
+    gridHelper.material.transparent = true;
     scene.add(gridHelper);
 
     // ─── PC CASE SETUP ──────────────────────────────────────────────────────
     const caseGeometry = new THREE.BoxGeometry(8, 4, 5);
-    caseMaterial = new THREE.MeshStandardMaterial({
-      color: new THREE.Color(currentDevice.housing.color || '#1a1a2e'),
-      metalness: currentDevice.housing.metalness !== undefined ? currentDevice.housing.metalness : 0.8,
-      roughness: currentDevice.housing.roughness !== undefined ? currentDevice.housing.roughness : 0.3,
+    caseMaterial = makeMaterial(new THREE.Color(currentDevice.housing.color || '#1a1a2e'), {
+      metalness: currentDevice.housing.metalness !== undefined ? currentDevice.housing.metalness : 0.72,
+      roughness: currentDevice.housing.roughness !== undefined ? currentDevice.housing.roughness : 0.32,
+      clearcoat: 0.42,
+      clearcoatRoughness: 0.18,
       side: THREE.BackSide,
     });
     caseObject = new THREE.Mesh(caseGeometry, caseMaterial);
@@ -714,6 +806,7 @@
       new THREE.LineBasicMaterial({ color: 0x00d4ff, transparent: true, opacity: 0.25 })
     );
     caseObject.add(edgeLines);
+    addCaseDetails();
 
     // Motherboard Tray Floor Plate
     const trayGeo = new THREE.BoxGeometry(7.8, 0.1, 4.8);
@@ -888,11 +981,73 @@
       group.add(fan);
     } else if (component.type === 'Storage') {
       const chipGeo = new THREE.BoxGeometry(w * 0.25, h * 0.6, d * 0.6);
-      const chipMat = new THREE.MeshStandardMaterial({ color: 0x111111, metalness: 0.3, roughness: 0.6 });
+      const chipMat = makeMaterial(0x11151c, { metalness: 0.35, roughness: 0.48 });
       const chip = new THREE.Mesh(chipGeo, chipMat);
       chip.position.set(-w * 0.2, h * 0.4, 0);
       chip.userData = { componentId: component.id, slotId: slot.id };
       group.add(chip);
+    }
+
+    const detailMaterial = makeMaterial(0x26313b, { metalness: 0.65, roughness: 0.3 });
+    const darkDetail = makeMaterial(0x0a0d12, { metalness: 0.45, roughness: 0.55 });
+    if (component.type === 'Motherboard') {
+      for (let i = -2; i <= 2; i++) {
+        const trace = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.025, 2.2), makeMaterial(0x4d8c68, { metalness: 0.3, roughness: 0.5 }));
+        trace.position.set(i * 0.35, h * 0.58, 0.25);
+        group.add(trace);
+      }
+      for (let i = 0; i < 4; i++) {
+        const slotBar = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.06, 1.25), darkDetail);
+        slotBar.position.set(-w * 0.28 + i * 0.22, h * 0.62, d * 0.18);
+        group.add(slotBar);
+      }
+      const heatsink = new THREE.Mesh(new THREE.BoxGeometry(w * 0.2, h * 1.3, d * 0.42), detailMaterial);
+      heatsink.position.set(-w * 0.28, h * 0.72, -d * 0.18);
+      group.add(heatsink);
+    }
+    if (component.type === 'CPU') {
+      for (let i = -2; i <= 2; i++) {
+        const contact = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.018, d * 0.08), makeMaterial(0xc8a84a, { metalness: 0.85, roughness: 0.22 }));
+        contact.position.set(i * w * 0.12, -h * 0.46, d * 0.34);
+        group.add(contact);
+      }
+    }
+    if (component.type === 'GPU') {
+      const backplate = new THREE.Mesh(new THREE.BoxGeometry(w * 0.98, h * 0.12, d * 0.88), makeMaterial(0x151b22, { metalness: 0.75, roughness: 0.28 }));
+      backplate.position.y = -h * 0.42;
+      group.add(backplate);
+      for (let i = -1; i <= 1; i++) {
+        const screw = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.035, 12), makeMaterial(0x92a0ae, { metalness: 0.85, roughness: 0.22 }));
+        screw.position.set(i * w * 0.32, h * 0.56, d * 0.32);
+        group.add(screw);
+      }
+    }
+    if (component.type === 'RAM') {
+      for (let i = -3; i <= 3; i++) {
+        const contact = new THREE.Mesh(new THREE.BoxGeometry(0.055, h * 0.08, d * 0.28), makeMaterial(0xb58d3d, { metalness: 0.8, roughness: 0.25 }));
+        contact.position.set(i * w * 0.11, -h * 0.47, 0);
+        group.add(contact);
+      }
+    }
+    if (component.type === 'Cooling') {
+      const fanHub = new THREE.Mesh(new THREE.CylinderGeometry(w * 0.13, w * 0.13, h * 0.34, 24), darkDetail);
+      fanHub.position.y = h * 0.48;
+      fanHub.userData.isCoolingFan = true;
+      group.add(fanHub);
+      for (let i = 0; i < 7; i++) {
+        const blade = new THREE.Mesh(new THREE.BoxGeometry(w * 0.06, h * 0.07, w * 0.32), detailMaterial);
+        blade.position.set(0, h * 0.5, 0);
+        blade.rotation.y = (Math.PI * 2 * i) / 7;
+        blade.userData.isCoolingFan = true;
+        group.add(blade);
+      }
+    }
+    if (component.type === 'PSU') {
+      for (let i = -2; i <= 2; i++) {
+        const vent = new THREE.Mesh(new THREE.BoxGeometry(w * 0.62, h * 0.045, 0.06), darkDetail);
+        vent.position.set(0, h * 0.38, i * d * 0.13);
+        group.add(vent);
+      }
     }
 
     group.position.set(slot.position[0], slot.position[1], slot.position[2]);
@@ -1750,6 +1905,11 @@
     }
 
     updateRGB(delta);
+    Object.values(installedMeshes).forEach(mesh => {
+      mesh.traverse(child => {
+        if (child.userData && child.userData.isCoolingFan) child.rotation.y += delta * 4.5;
+      });
+    });
 
     if (renderer && scene && camera) {
       renderer.render(scene, camera);
