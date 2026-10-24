@@ -24,7 +24,7 @@
 
   const HOUSING_PRESETS = {
     aluminum: {
-      label: 'Aluminum',
+      labelKey: 'editor.aluminum',
       metalness: 0.8,
       roughness: 0.3,
       color: '#1a1a2e',
@@ -33,7 +33,7 @@
       defectDelta: -0.5,
     },
     carbon_fiber: {
-      label: 'Carbon Fiber',
+      labelKey: 'editor.carbonFiber',
       metalness: 0.4,
       roughness: 0.5,
       color: '#121216',
@@ -42,7 +42,7 @@
       defectDelta: -1.0,
     },
     premium_plastic: {
-      label: 'Matte Plastic',
+      labelKey: 'editor.mattePlastic',
       metalness: 0.1,
       roughness: 0.6,
       color: '#222230',
@@ -654,20 +654,20 @@
       modal.innerHTML = `
         <div class="editor-modal-header">
           <div class="editor-title-group">
-            <span class="editor-modal-title">🛠️ 3D Device Architect</span>
-            <span class="editor-badge" id="editor-device-badge">PC Build</span>
+            <span class="editor-modal-title" data-i18n="editor.title">🛠️ 3D Device Architect</span>
+            <span class="editor-badge" id="editor-device-badge" data-i18n="editor.pcBuild">PC Build</span>
           </div>
-          <button id="editor-close-btn" class="editor-btn-close" title="Close Editor">&times;</button>
+          <button id="editor-close-btn" class="editor-btn-close" data-i18n-title="editor.close" title="Close Editor">&times;</button>
         </div>
         <div class="editor-main-layout">
           <div id="editor-comp-list"></div>
           <div class="editor-canvas-container">
             <canvas id="editor-canvas"></canvas>
             <div class="canvas-overlay-hints">
-              <span>🖱️ Drag: Rotate</span>
-              <span>🖱️ Right-drag: Pan</span>
-              <span>⚙️ Scroll: Zoom</span>
-              <span>📦 Click or Drag parts to slots</span>
+              <span data-i18n="editor.dragRotate">🖱️ Drag: Rotate</span>
+              <span data-i18n="editor.rightPan">🖱️ Right-drag: Pan</span>
+              <span data-i18n="editor.scrollZoom">⚙️ Scroll: Zoom</span>
+              <span data-i18n="editor.clickDrag">📦 Click or Drag parts to slots</span>
             </div>
           </div>
           <div class="editor-right-panels">
@@ -675,7 +675,7 @@
             <div id="editor-material-panel"></div>
             <div id="editor-scores"></div>
             <div class="editor-footer-actions">
-              <button id="editor-launch-btn">Save & Launch Device</button>
+              <button id="editor-launch-btn" data-i18n="editor.saveLaunch">Save & Launch Device</button>
             </div>
           </div>
         </div>
@@ -2053,7 +2053,13 @@
 
     if (renderer) {
       renderer.dispose();
+      renderer.forceContextLoss && renderer.forceContextLoss();
       renderer = null;
+    }
+
+    var oldCanvas = document.getElementById('editor-canvas');
+    if (oldCanvas && oldCanvas.parentNode) {
+      oldCanvas.parentNode.removeChild(oldCanvas);
     }
 
     camera = null;
