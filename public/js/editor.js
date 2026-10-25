@@ -12,14 +12,14 @@
   // ─── CONSTANTS & CONFIGURATION ──────────────────────────────────────────
 
   const SNAP_SLOTS = [
-    { id: 'cpu_socket',    label: 'CPU Socket',    position: [ -1.5,  0.5,  0.0 ], type: 'CPU',         size: [2.0, 0.3, 2.0] },
-    { id: 'gpu_slot',      label: 'PCIe x16',      position: [  0.0, -0.5,  0.5 ], type: 'GPU',         size: [4.0, 0.6, 1.2] },
-    { id: 'ram_slot_1',    label: 'DDR5 Slot 1',   position: [ -0.5,  0.5,  1.2 ], type: 'RAM',         size: [0.4, 0.3, 1.5] },
-    { id: 'ram_slot_2',    label: 'DDR5 Slot 2',   position: [  0.1,  0.5,  1.2 ], type: 'RAM',         size: [0.4, 0.3, 1.5] },
-    { id: 'storage_slot',  label: 'M.2 NVMe',      position: [  1.5,  0.5,  0.5 ], type: 'Storage',     size: [1.0, 0.1, 0.3] },
-    { id: 'cooling_mount', label: 'CPU Cooler',     position: [ -1.5,  1.5,  0.0 ], type: 'Cooling',     size: [2.0, 1.0, 2.0] },
-    { id: 'psu_bay',       label: 'PSU Bay',        position: [  2.5, -1.0,  0.0 ], type: 'PSU',         size: [2.5, 1.0, 1.5] },
-    { id: 'motherboard',   label: 'Motherboard',    position: [  0.0,  0.0,  0.0 ], type: 'Motherboard', size: [4.0, 0.2, 3.5] },
+    { id: 'cpu_socket',    labelKey: 'editor.cpuSocket',    position: [ -1.5,  0.5,  0.0 ], type: 'CPU',         size: [2.0, 0.3, 2.0] },
+    { id: 'gpu_slot',      labelKey: 'editor.pcieSlot',     position: [  0.0, -0.5,  0.5 ], type: 'GPU',         size: [4.0, 0.6, 1.2] },
+    { id: 'ram_slot_1',    labelKey: 'editor.ddrSlot1',     position: [ -0.5,  0.5,  1.2 ], type: 'RAM',         size: [0.4, 0.3, 1.5] },
+    { id: 'ram_slot_2',    labelKey: 'editor.ddrSlot2',     position: [  0.1,  0.5,  1.2 ], type: 'RAM',         size: [0.4, 0.3, 1.5] },
+    { id: 'storage_slot',  labelKey: 'editor.nvmeSlot',     position: [  1.5,  0.5,  0.5 ], type: 'Storage',     size: [1.0, 0.1, 0.3] },
+    { id: 'cooling_mount', labelKey: 'editor.cpuCooler',    position: [ -1.5,  1.5,  0.0 ], type: 'Cooling',     size: [2.0, 1.0, 2.0] },
+    { id: 'psu_bay',       labelKey: 'editor.psuBay',       position: [  2.5, -1.0,  0.0 ], type: 'PSU',         size: [2.5, 1.0, 1.5] },
+    { id: 'motherboard',   labelKey: 'editor.motherboard',  position: [  0.0,  0.0,  0.0 ], type: 'Motherboard', size: [4.0, 0.2, 3.5] },
   ];
 
   const HOUSING_PRESETS = {
@@ -99,6 +99,13 @@
   ];
 
   // ─── RUNTIME STATE ────────────────────────────────────────────────────────
+
+  function tt(key, params) {
+    if (window.ITG && window.ITG.I18n && typeof window.ITG.I18n.t === 'function') {
+      return window.ITG.I18n.t(key, params);
+    }
+    return key;
+  }
 
   let currentDevice = null;
   let isOpen = false;
@@ -1336,12 +1343,22 @@
 
     let html = '';
 
+    const categoryLabels = {
+      Motherboard: tt('editor.motherboard'),
+      CPU: tt('editor.cpuSocket'),
+      Cooling: tt('editor.cpuCooler'),
+      RAM: tt('editor.ddrSlot1'),
+      GPU: tt('editor.pcieSlot'),
+      Storage: tt('editor.nvmeSlot'),
+      PSU: tt('editor.psuBay'),
+    };
+
     categories.forEach(cat => {
       const catComps = all.filter(c => c.type === cat && isComponentUnlocked(c));
       if (catComps.length === 0) return;
 
       html += `<div class='comp-category'>`;
-      html += `<div class='comp-cat-title'><span>${cat}</span><span style="font-size:10px;color:#64748b;">${catComps.length}</span></div>`;
+      html += `<div class='comp-cat-title'><span>${categoryLabels[cat] || cat}</span><span style="font-size:10px;color:#64748b;">${catComps.length}</span></div>`;
 
       catComps.forEach(comp => {
         const isInstalled = currentDevice.components.some(c => c.componentId === comp.id);
@@ -1358,10 +1375,10 @@
             <div class='comp-color-swatch' style='background:${swatchColor}'></div>
             <div class='comp-info'>
               <div class='comp-name' title='${escapeHtml(comp.name)}'>${escapeHtml(comp.name)}</div>
-              <div class='comp-stats'>Tier ${comp.tier || 1} · ${comp.tdpWatts || comp.tdp || 0}W · ${costStr}</div>
+              <div class='comp-stats'>${tt('editor.tier')} ${comp.tier || 1} · ${comp.tdpWatts || comp.tdp || 0}${tt('editor.watts')} · ${costStr}</div>
             </div>
             <button class='comp-install-btn ${isInstalled ? 'installed' : ''}' data-comp-id='${comp.id}'>
-              ${isInstalled ? 'Installed' : 'Install'}
+              ${isInstalled ? tt('editor.installed') : tt('editor.install')}
             </button>
           </div>
         `;
@@ -1438,12 +1455,12 @@
       if (cpu.socketType && mb.socketType && cpu.socketType !== mb.socketType) {
         issues.push({
           type: 'error',
-          msg: `CPU socket (${cpu.socketType}) ≠ Motherboard (${mb.socketType})`,
+          msg: tt('editor.socketMismatch', { cpu: cpu.socketType, mb: mb.socketType }),
         });
       } else {
         issues.push({
           type: 'ok',
-          msg: `Socket ${cpu.socketType || mb.socketType || 'Standard'}: Compatible`,
+          msg: tt('editor.socketCompat', { socket: cpu.socketType || mb.socketType || 'Standard' }),
         });
       }
     }
@@ -1455,17 +1472,17 @@
       if (totalTDP > maxTDP) {
         issues.push({
           type: 'error',
-          msg: `Total TDP ${totalTDP}W exceeds cooler capacity ${maxTDP}W`,
+          msg: tt('editor.tdpExceeds', { total: totalTDP, max: maxTDP }),
         });
       } else if (totalTDP > maxTDP * 0.85) {
         issues.push({
           type: 'warning',
-          msg: `Cooling near limit (${Math.round((totalTDP / maxTDP) * 100)}%)`,
+          msg: tt('editor.tdpNearLimit', { percent: Math.round((totalTDP / maxTDP) * 100) }),
         });
       } else {
         issues.push({
           type: 'ok',
-          msg: `TDP: Within cooling capacity (${totalTDP}W / ${maxTDP}W)`,
+          msg: tt('editor.tdpWithin', { total: totalTDP, max: maxTDP }),
         });
       }
     }
@@ -1476,25 +1493,25 @@
       if (totalTDP > wattage * 0.8) {
         issues.push({
           type: 'error',
-          msg: `PSU ${wattage}W insufficient for system TDP ${totalTDP}W`,
+          msg: tt('editor.psuInsufficient', { wattage: wattage, total: totalTDP }),
         });
       } else {
         issues.push({
           type: 'ok',
-          msg: `PSU ${wattage}W (Est. Load: ${Math.round((totalTDP / wattage) * 100)}%)`,
+          msg: tt('editor.psuLoad', { wattage: wattage, percent: Math.round((totalTDP / wattage) * 100) }),
         });
       }
     }
 
     // Missing Critical Components
     if (!mb) {
-      issues.push({ type: 'error', msg: 'Motherboard: No motherboard installed' });
+      issues.push({ type: 'error', msg: tt('editor.noMotherboard') });
     }
     if (!cpu) {
-      issues.push({ type: 'error', msg: 'CPU: No CPU installed' });
+      issues.push({ type: 'error', msg: tt('editor.noCpu') });
     }
     if (!ram) {
-      issues.push({ type: 'warning', msg: 'RAM: No RAM installed yet' });
+      issues.push({ type: 'warning', msg: tt('editor.noRam') });
     }
 
     return issues;
@@ -1518,35 +1535,35 @@
       compHtml = `
         <div class='info-title'>
           <span>${escapeHtml(selectedComp.name)}</span>
-          ${isInstalled ? `<button id='btn-uninstall-part' style='font-size:11px;background:#ff4455;color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;'>Uninstall</button>` : ''}
+          ${isInstalled ? `<button id='btn-uninstall-part' style='font-size:11px;background:#ff4455;color:#fff;border:none;border-radius:4px;padding:2px 8px;cursor:pointer;'>${tt('editor.uninstall')}</button>` : ''}
         </div>
-        <div class='stat-row'><span>Type</span><span class='mono'>${selectedComp.type}</span></div>
-        <div class='stat-row'><span>Performance</span><span class='mono'>${perf}/10</span></div>
-        <div class='stat-row'><span>TDP</span><span class='mono'>${tdp}</span></div>
-        <div class='stat-row'><span>Cost</span><span class='mono'>${costStr}</span></div>
-        ${selectedComp.socketType ? `<div class='stat-row'><span>Socket</span><span class='mono'>${selectedComp.socketType}</span></div>` : ''}
-        ${selectedComp.maxTDP ? `<div class='stat-row'><span>Cooler Rating</span><span class='mono'>${selectedComp.maxTDP}W</span></div>` : ''}
-        ${selectedComp.wattage ? `<div class='stat-row'><span>PSU Capacity</span><span class='mono'>${selectedComp.wattage}W</span></div>` : ''}
+        <div class='stat-row'><span>${tt('editor.type')}</span><span class='mono'>${selectedComp.type}</span></div>
+        <div class='stat-row'><span>${tt('editor.performance')}</span><span class='mono'>${perf}/10</span></div>
+        <div class='stat-row'><span>${tt('editor.tdp')}</span><span class='mono'>${tdp}</span></div>
+        <div class='stat-row'><span>${tt('editor.cost')}</span><span class='mono'>${costStr}</span></div>
+        ${selectedComp.socketType ? `<div class='stat-row'><span>${tt('editor.socket')}</span><span class='mono'>${selectedComp.socketType}</span></div>` : ''}
+        ${selectedComp.maxTDP ? `<div class='stat-row'><span>${tt('editor.coolerRating')}</span><span class='mono'>${selectedComp.maxTDP}W</span></div>` : ''}
+        ${selectedComp.wattage ? `<div class='stat-row'><span>${tt('editor.psuCapacity')}</span><span class='mono'>${selectedComp.wattage}W</span></div>` : ''}
       `;
     } else if (selectedSlot) {
       compHtml = `
-        <div class='info-title'><span>${escapeHtml(selectedSlot.label || selectedSlot.id)}</span></div>
-        <div class='stat-row'><span>Slot Type</span><span class='mono'>${selectedSlot.type}</span></div>
-        <div style='font-size:12px;color:#64748b;margin:8px 0;'>Empty slot. Click an item in the catalog to install it here.</div>
+        <div class='info-title'><span>${escapeHtml(selectedSlot.labelKey ? tt(selectedSlot.labelKey) : selectedSlot.label || selectedSlot.id)}</span></div>
+        <div class='stat-row'><span>${tt('editor.slotType')}</span><span class='mono'>${selectedSlot.type}</span></div>
+        <div style='font-size:12px;color:#64748b;margin:8px 0;'>${tt('editor.emptySlot')}</div>
       `;
     } else {
       const count = currentDevice ? currentDevice.components.length : 0;
       compHtml = `
-        <div class='info-title'><span>System Architecture</span></div>
-        <div class='stat-row'><span>Parts Installed</span><span class='mono'>${count} / ${SNAP_SLOTS.length}</span></div>
-        <div style='font-size:12px;color:#64748b;margin:8px 0;'>Click any 3D component or snap slot to inspect specifications.</div>
+        <div class='info-title'><span>${tt('editor.systemArch')}</span></div>
+        <div class='stat-row'><span>${tt('editor.partsInstalled')}</span><span class='mono'>${count} / ${SNAP_SLOTS.length}</span></div>
+        <div style='font-size:12px;color:#64748b;margin:8px 0;'>${tt('editor.clickToInspect')}</div>
       `;
     }
 
     // Render compatibility list
     let compatHtml = `<div class='compatibility'>`;
     if (issues.length === 0) {
-      compatHtml += `<div style='color:#00ff88;'>✅ All components compatible</div>`;
+      compatHtml += `<div style='color:#00ff88;'>${tt('editor.allCompatible')}</div>`;
     } else {
       issues.forEach(item => {
         const icon = item.type === 'error' ? '❌' : (item.type === 'warning' ? '⚠️' : '✅');
@@ -1575,26 +1592,26 @@
     const h = currentDevice.housing;
 
     panel.innerHTML = `
-      <div class='mat-title'>Housing</div>
+      <div class='mat-title'>${tt('editor.housing')}</div>
       <div class='mat-options'>
-        <button class='mat-preset ${h.material === 'aluminum' ? 'active' : ''}' data-mat='aluminum'>Aluminum</button>
-        <button class='mat-preset ${h.material === 'carbon_fiber' ? 'active' : ''}' data-mat='carbon_fiber'>Carbon Fiber</button>
-        <button class='mat-preset ${h.material === 'premium_plastic' ? 'active' : ''}' data-mat='premium_plastic'>Matte Plastic</button>
+        <button class='mat-preset ${h.material === 'aluminum' ? 'active' : ''}' data-mat='aluminum'>${tt('editor.aluminum')}</button>
+        <button class='mat-preset ${h.material === 'carbon_fiber' ? 'active' : ''}' data-mat='carbon_fiber'>${tt('editor.carbonFiber')}</button>
+        <button class='mat-preset ${h.material === 'premium_plastic' ? 'active' : ''}' data-mat='premium_plastic'>${tt('editor.mattePlastic')}</button>
       </div>
       <div class='color-row'>
-        <label>Color</label>
+        <label>${tt('editor.color')}</label>
         <input type='color' id='housing-color' value='${h.color || '#1a1a2e'}'>
       </div>
       <div class='slider-row'>
-        <label>Metalness</label>
+        <label>${tt('editor.metalness')}</label>
         <input type='range' id='metalness-slider' min='0' max='100' value='${Math.round(h.metalness * 100)}'>
       </div>
       <div class='slider-row'>
-        <label>Roughness</label>
+        <label>${tt('editor.roughness')}</label>
         <input type='range' id='roughness-slider' min='0' max='100' value='${Math.round(h.roughness * 100)}'>
       </div>
       <div class='toggle-row'>
-        <label>RGB Lighting</label>
+        <label>${tt('editor.rgbLighting')}</label>
         <div style="display:flex;align-items:center;gap:8px;">
           <input type='checkbox' id='rgb-toggle' ${h.hasRGB ? 'checked' : ''}>
           <input type='color' id='rgb-color' value='${h.rgbColor || '#00d4ff'}' style='display:${h.hasRGB ? 'inline-block' : 'none'}'>
@@ -1800,31 +1817,31 @@
       const defectColorClass = defectRate > 4 ? 'red' : (defectRate > 2.2 ? 'yellow' : 'green');
 
       scoresEl.innerHTML = `
-        <div class='score-title'>Assembly Analysis</div>
+        <div class='score-title'>${tt('editor.assemblyAnalysis')}</div>
         <div class='score-item'>
           <div class='score-item-top'>
-            <span>Performance</span>
+            <span>${tt('editor.performance')}</span>
             <span class='mono'>${perfScore}/100</span>
           </div>
           <div class='score-bar'><div style='width:${perfScore}%;background:var(--accent, #00d4ff);'></div></div>
         </div>
         <div class='score-item'>
           <div class='score-item-top'>
-            <span>Thermal</span>
+            <span>${tt('editor.thermal')}</span>
             <span class='mono'>${thermalScore}/100</span>
           </div>
           <div class='score-bar'><div style='width:${thermalScore}%;background:${thermalScore > 70 ? '#00ff88' : (thermalScore > 40 ? '#ffaa00' : '#ff4455')};'></div></div>
         </div>
         <div class='score-item'>
           <div class='score-item-top'>
-            <span>Build Quality</span>
+            <span>${tt('editor.buildQuality')}</span>
             <span class='mono'>${buildQuality}/100</span>
           </div>
           <div class='score-bar'><div style='width:${buildQuality}%;background:#bd93f9;'></div></div>
         </div>
-        <div class='cogs-row'>COGS: <span class='mono green'>${formatMoney(cogs)}</span></div>
-        <div class='defect-row'>Defect Rate: <span class='mono ${defectColorClass}'>${currentDevice.defectRate}%</span></div>
-        <div class='press-row'>Est. Press Score: <span class='mono'>${pressScore}/100</span></div>
+        <div class='cogs-row'>${tt('editor.cogs')} <span class='mono green'>${formatMoney(cogs)}</span></div>
+        <div class='defect-row'>${tt('editor.defectRate')} <span class='mono ${defectColorClass}'>${currentDevice.defectRate}%</span></div>
+        <div class='press-row'>${tt('editor.pressScore')} <span class='mono'>${pressScore}/100</span></div>
       `;
     }
   }
@@ -1846,7 +1863,7 @@
     if (!hasRAM) missing.push('RAM');
 
     if (missing.length > 0) {
-      const msg = 'Missing essential components: ' + missing.join(', ') + ' must be installed!';
+      const msg = tt('editor.missingComponents') + missing.join(', ') + tt('editor.mustInstall');
       if (window.ITG && window.ITG.UI && typeof window.ITG.UI.showToast === 'function') {
         window.ITG.UI.showToast('⚠️ ' + msg, 'error');
       } else {
@@ -1989,7 +2006,7 @@
     window.ITG.Editor.currentDevice = currentDevice;
 
     const badge = document.getElementById('editor-device-badge');
-    if (badge) badge.textContent = `${currentDevice.category} Architecture`;
+    if (badge) badge.textContent = `${currentDevice.category} ${tt('editor.architecture')}`;
 
     // Initialize 3D Engine
     initThree();

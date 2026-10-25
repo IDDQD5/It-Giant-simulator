@@ -14,6 +14,13 @@
   let currentScreen = 'dashboard';
   let activeDetailProductId = null;
 
+  function tt(key, params) {
+    if (window.ITG && window.ITG.I18n && typeof window.ITG.I18n.t === 'function') {
+      return window.ITG.I18n.t(key, params);
+    }
+    return key;
+  }
+
   // ─── DEFAULT FALLBACK DATA (When not in GameState/Data) ──────────────────────
 
   const DEFAULT_TECH_LIST = [
@@ -146,7 +153,7 @@
   }
 
   function formatWeek(week, year) {
-    return `Week ${week || 1} of Year ${year || 1}`;
+    return tt('hud.week') + ' ' + (week || 1) + ' / ' + (year || 1);
   }
 
   function escapeHtml(str) {
@@ -237,8 +244,8 @@
 
     if (!Array.isArray(gs.news)) {
       gs.news = [
-        { icon: '🚀', text: 'Welcome to IT Giant Simulator! Design and launch your first PC in Products.', time: 'Week 1', type: 'info' },
-        { icon: '💡', text: 'Assign engineers to R&D to generate tech points and unlock next-gen components.', time: 'Week 1', type: 'info' },
+        { icon: '🚀', text: tt('toast.welcome'), time: tt('hud.week') + ' 1', type: 'info' },
+        { icon: '💡', text: tt('howto.step3'), time: tt('hud.week') + ' 1', type: 'info' },
       ];
     }
 
@@ -623,29 +630,29 @@
         <div class="grid-3" style="grid-template-columns: repeat(4, 1fr);">
           <div class="card">
             <div class="card-body">
-              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Company Valuation</div>
+              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">${tt('dash.companyValuation')}</div>
               <div style="font-size: 26px; font-weight: 700; color: #fff; margin: 8px 0;">${formatMoney(companyVal)}</div>
               <div style="font-size: 12px; color: #10b981; display: flex; align-items: center; gap: 4px;">
-                <span>▲ Assets & Potential</span>
+                <span>${tt('dash.assetsPotential')}</span>
               </div>
             </div>
           </div>
 
           <div class="card">
             <div class="card-body">
-              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Weekly Profit / Loss</div>
+              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">${tt('dash.weeklyProfit')}</div>
               <div style="font-size: 26px; font-weight: 700; color: ${weeklyProfit >= 0 ? '#10b981' : '#ef4444'}; margin: 8px 0;">
                 ${formatMoney(weeklyProfit)}
               </div>
               <div style="font-size: 12px; color: #94a3b8;">
-                In: <span style="color:#10b981">${formatMoney(weeklyIncome)}</span> | Ex: <span style="color:#ef4444">${formatMoney(weeklyExpenses)}</span>
+                ${tt('dash.in')} <span style="color:#10b981">${formatMoney(weeklyIncome)}</span> | ${tt('dash.ex')} <span style="color:#ef4444">${formatMoney(weeklyExpenses)}</span>
               </div>
             </div>
           </div>
 
           <div class="card">
             <div class="card-body">
-              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Market Share</div>
+              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">${tt('dash.marketShare')}</div>
               <div style="font-size: 26px; font-weight: 700; color: #00d4ff; margin: 8px 0;">${marketShare}%</div>
               <div class="progress-bar-wrap" style="height: 6px;">
                 <div class="progress-bar-fill" style="width: ${marketShare}%; background: #00d4ff;"></div>
@@ -655,7 +662,7 @@
 
           <div class="card">
             <div class="card-body">
-              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Brand Awareness</div>
+              <div style="font-size: 12px; color: #94a3b8; font-weight: 600; text-transform: uppercase;">${tt('dash.brandAwareness')}</div>
               <div style="font-size: 26px; font-weight: 700; color: #a855f7; margin: 8px 0;">${brandAwareness}%</div>
               <div class="progress-bar-wrap" style="height: 6px;">
                 <div class="progress-bar-fill" style="width: ${brandAwareness}%; background: #a855f7;"></div>
@@ -670,30 +677,30 @@
           <div class="card">
             <div class="card-header">
               <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                <span>💻 Active Products</span>
-                <span class="badge badge-blue">${activeProducts.length} Live</span>
+                <span>${tt('dash.activeProducts')}</span>
+                <span class="badge badge-blue">${activeProducts.length} ${tt('dash.live')}</span>
               </div>
               <button id="dash-btn-new-product" class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer;">
-                + New Product
+                ${tt('dash.newProduct')}
               </button>
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 12px; max-height: 380px; overflow-y: auto;">
               ${activeProducts.length === 0 ? `
                 <div class="empty-state">
                   <div class="empty-state-icon">🖥️</div>
-                  <div style="font-weight: 600; color: #fff;">No active products</div>
-                  <div style="font-size: 13px; margin: 6px 0 16px;">Design and assemble your first computer to start generating revenue.</div>
+                  <div style="font-weight: 600; color: #fff;">${tt('dash.noActiveProducts')}</div>
+                  <div style="font-size: 13px; margin: 6px 0 16px;">${tt('dash.designFirst')}</div>
                   <button id="dash-btn-empty-new" class="btn-primary" style="padding: 8px 16px; cursor: pointer;">
-                    Launch First Product
+                    ${tt('dash.launchFirst')}
                   </button>
                 </div>
               ` : activeProducts.map(p => {
                 const stage = p.stage || 'on_market';
                 const stageBadge = stage === 'on_market'
-                  ? '<span class="badge badge-green">🟢 On Market</span>'
+                  ? '<span class="badge badge-green">' + tt('dash.onMarket') + '</span>'
                   : stage === 'development'
-                  ? '<span class="badge badge-yellow">🟡 In Dev</span>'
-                  : '<span class="badge badge-red">🔴 Declining</span>';
+                  ? '<span class="badge badge-yellow">' + tt('dash.inDev') + '</span>'
+                  : '<span class="badge badge-red">' + tt('dash.declining') + '</span>';
                 const peak = p.peakProgress !== undefined ? p.peakProgress : Math.min(100, Math.round(((p.sales || 500) / 5000) * 100));
 
                 return `
@@ -706,12 +713,12 @@
                       ${stageBadge}
                     </div>
                     <div class="stat-row" style="font-size: 13px; color: #94a3b8; margin-bottom: 8px;">
-                      <span>Sales: <strong style="color: #fff;">${(p.weeklySales || 0).toLocaleString()}</strong> units/wk</span>
-                      <span>Price: <strong style="color: #10b981;">${formatMoney(p.price || 0)}</strong></span>
+                      <span>${tt('dash.sales')} <strong style="color: #fff;">${(p.weeklySales || 0).toLocaleString()}</strong> ${tt('dash.unitsWk')}</span>
+                      <span>${tt('dash.price')} <strong style="color: #10b981;">${formatMoney(p.price || 0)}</strong></span>
                     </div>
                     <div>
                       <div class="stat-row" style="font-size: 11px; color: #64748b; margin-bottom: 3px;">
-                        <span>Progress to Peak Sales</span>
+                        <span>${tt('dash.progressToPeak')}</span>
                         <span>${peak}%</span>
                       </div>
                       <div class="progress-bar-wrap" style="height: 5px;">
@@ -728,8 +735,8 @@
           <div class="card">
             <div class="card-header">
               <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-                <span>🏢 Competitor Intelligence</span>
-                <span class="badge badge-yellow">Live AI</span>
+                <span>${tt('dash.competitorIntel')}</span>
+                <span class="badge badge-yellow">${tt('dash.liveAI')}</span>
               </div>
             </div>
             <div class="card-body" style="display: flex; flex-direction: column; gap: 14px; max-height: 380px; overflow-y: auto;">
@@ -737,7 +744,7 @@
                 <div style="background: rgba(255, 255, 255, 0.02); border-left: 3px solid ${c.color}; border-radius: 0 8px 8px 0; padding: 12px;">
                   <div class="stat-row" style="margin-bottom: 4px;">
                     <strong style="color: #fff; font-size: 14px;">${escapeHtml(c.name)}</strong>
-                    <span class="badge" style="background: rgba(255,255,255,0.08); color: ${c.color};">${c.share}% Share</span>
+                    <span class="badge" style="background: rgba(255,255,255,0.08); color: ${c.color};">${c.share}${tt('dash.share')}</span>
                   </div>
                   <div style="font-size: 12px; color: #94a3b8; margin-bottom: 8px;">
                     ${escapeHtml(c.strategy)}
@@ -759,13 +766,13 @@
         <div class="card">
           <div class="card-header">
             <div style="font-weight: 700; display: flex; align-items: center; gap: 8px;">
-              <span>📰 Tech Industry News & Events</span>
-              <span class="badge badge-blue">Chronological</span>
+              <span>${tt('dash.techNews')}</span>
+              <span class="badge badge-blue">${tt('dash.chronological')}</span>
             </div>
           </div>
           <div class="card-body" style="display: flex; flex-direction: column; gap: 10px; max-height: 280px; overflow-y: auto;">
             ${newsFeed.length === 0 ? `
-              <div style="color: #64748b; font-size: 13px; text-align: center; padding: 20px;">No recent news events. Advance the week to view industry updates.</div>
+              <div style="color: #64748b; font-size: 13px; text-align: center; padding: 20px;">${tt('dash.noNews')}</div>
             ` : newsFeed.map(n => `
               <div style="display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: rgba(255, 255, 255, 0.02); border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.04);">
                 <div style="font-size: 20px; flex-shrink: 0;">${n.icon || '📰'}</div>
@@ -802,11 +809,11 @@
         <!-- Top Action Bar -->
         <div style="display: flex; justify-content: space-between; align-items: center; background: #141726; padding: 16px 20px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08);">
           <div>
-            <div style="font-size: 20px; font-weight: 700; color: #fff;">Products Portfolio</div>
-            <div style="font-size: 13px; color: #94a3b8;">Manage pricing, marketing campaigns, life cycles, and design new computers.</div>
+            <div style="font-size: 20px; font-weight: 700; color: #fff;">${tt('prod.portfolio')}</div>
+            <div style="font-size: 13px; color: #94a3b8;">${tt('prod.portfolioDesc')}</div>
           </div>
           <button id="products-btn-new" class="btn-primary" style="padding: 10px 20px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px;">
-            <span>✨ + New Product</span>
+            <span>${tt('prod.newProduct')}</span>
           </button>
         </div>
 
@@ -815,12 +822,12 @@
           <div class="card">
             <div class="empty-state">
               <div class="empty-state-icon">🖥️</div>
-              <div style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">No Products in Catalog</div>
+              <div style="font-size: 18px; font-weight: 700; color: #fff; margin-bottom: 8px;">${tt('prod.noProducts')}</div>
               <div style="max-width: 480px; margin: 0 auto 20px; font-size: 14px; color: #94a3b8;">
-                Your engineering and design team is ready. Launch the 3D PC Constructor to combine motherboards, processors, graphics, and chassis into your debut flagship.
+                ${tt('prod.noProductsDesc')}
               </div>
               <button id="products-btn-first" class="btn-primary" style="padding: 10px 24px; font-size: 14px; cursor: pointer;">
-                + Design Your First PC
+                ${tt('prod.designFirst')}
               </button>
             </div>
           </div>
@@ -828,11 +835,11 @@
           <div class="grid-3">
             ${products.map(p => {
               const stage = p.stage || 'on_market';
-              let stageBadge = '<span class="badge badge-green">🟢 On Market</span>';
+              let stageBadge = '<span class="badge badge-green">' + tt('dash.onMarket') + '</span>';
               if (stage === 'discontinued') {
-                stageBadge = '<span class="badge badge-red">🔴 Discontinued</span>';
+                stageBadge = '<span class="badge badge-red">' + tt('prod.discontinued') + '</span>';
               } else if (stage === 'development') {
-                stageBadge = '<span class="badge badge-yellow">🟡 Development</span>';
+                stageBadge = '<span class="badge badge-yellow">' + tt('prod.development') + '</span>';
               }
 
               const score = p.overallScore || p.score || (p.scores && p.scores.overall) || 78;
@@ -853,14 +860,14 @@
                   </div>
                   <div class="card-body" style="display: flex; flex-direction: column; gap: 12px; flex: 1;">
                     <div style="font-size: 12px; color: #94a3b8; font-weight: 500;">
-                      ${escapeHtml(p.category || 'PC')} · ${escapeHtml(p.segment || 'Desktop Gaming')}
+                      ${escapeHtml(p.category || tt('prod.pc'))} · ${escapeHtml(p.segment || tt('prod.desktopGaming'))}
                     </div>
 
                     <!-- Score Bar -->
                     <div>
                       <div class="stat-row" style="font-size: 12px; margin-bottom: 4px;">
-                        <span style="color: #cbd5e1;">Overall Quality</span>
-                        <strong style="color: #00d4ff;">${score}% Score</strong>
+                        <span style="color: #cbd5e1;">${tt('prod.overallQuality')}</span>
+                        <strong style="color: #00d4ff;">${score}${tt('prod.score')}</strong>
                       </div>
                       <div class="progress-bar-wrap" style="height: 7px;">
                         <div class="progress-bar-fill" style="width: ${score}%; background: linear-gradient(90deg, #3b82f6, #00d4ff);"></div>
@@ -870,19 +877,19 @@
                     <!-- Sales Metrics -->
                     <div style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 10px; display: flex; flex-direction: column; gap: 6px; font-size: 13px;">
                       <div class="stat-row">
-                        <span style="color: #94a3b8;">Total Sold:</span>
-                        <strong style="color: #fff;">${unitsSold} units</strong>
+                        <span style="color: #94a3b8;">${tt('prod.totalSold')}</span>
+                        <strong style="color: #fff;">${unitsSold} ${tt('prod.units')}</strong>
                       </div>
                       <div class="stat-row">
-                        <span style="color: #94a3b8;">Weekly Sales:</span>
-                        <strong style="color: #38bdf8;">${weeklyUnits} /wk</strong>
+                        <span style="color: #94a3b8;">${tt('prod.weeklySales')}</span>
+                        <strong style="color: #38bdf8;">${weeklyUnits} ${tt('prod.wk')}</strong>
                       </div>
                       <div class="stat-row">
-                        <span style="color: #94a3b8;">Total Revenue:</span>
+                        <span style="color: #94a3b8;">${tt('prod.totalRevenue')}</span>
                         <strong style="color: #10b981;">${revenue}</strong>
                       </div>
                       <div class="stat-row">
-                        <span style="color: #94a3b8;">Retail Price:</span>
+                        <span style="color: #94a3b8;">${tt('prod.retailPrice')}</span>
                         <strong style="color: #fbbf24;">${formatMoney(p.price || 0)}</strong>
                       </div>
                     </div>
@@ -890,11 +897,11 @@
                     <!-- Action Buttons -->
                     <div style="margin-top: auto; display: flex; gap: 8px; padding-top: 8px;">
                       <button class="btn-secondary btn-view-product" data-product-id="${p.id}" style="flex: 1; padding: 8px 12px; font-size: 12px; cursor: pointer;">
-                        👁️ View Details
+                        ${tt('prod.viewDetails')}
                       </button>
                       ${stage !== 'discontinued' ? `
                         <button class="btn-danger btn-discontinue-product" data-product-id="${p.id}" style="padding: 8px 12px; font-size: 12px; cursor: pointer;">
-                          🛑 Discontinue
+                          ${tt('prod.discontinue')}
                         </button>
                       ` : ''}
                     </div>
